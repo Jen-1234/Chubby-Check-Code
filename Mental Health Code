@@ -1,0 +1,124 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+
+public class MentalHealthRobotGUI {
+
+    public static void main(String[] args) {
+        new MentalHealthRobotFrame();
+    }
+}
+
+class MentalHealthRobotFrame extends JFrame implements ActionListener {
+
+    private JFrame frame;
+    private JTextArea questionArea;
+    private JButton[] responseButtons = new JButton[4];
+    private JButton nextButton;
+    private JPanel panel;
+    private int currentQuestion = 0;
+    private int score = 0;
+
+    // Array of light-hearted questions
+    private String[] questions = {
+        "Do you often feel like your favorite TV show is more reliable than people?",
+        "Do you find yourself awake at night because you’re debating the perfect pizza topping?",
+        "Do you feel like your houseplants are secretly judging your life choices?",
+        "Do you struggle to concentrate because you’re daydreaming about a vacation?",
+        "Have you lost interest in hobbies because your couch is just too comfortable?",
+        "Do you feel like you need more coffee just to make it through the day?",
+        "Do you sometimes feel like you’re stuck in a never-ending loop of Monday mornings?"
+    };
+
+    // Response options
+    private String[] responses = {"Never", "Sometimes", "Often", "Always"};
+
+    MentalHealthRobotFrame() {
+        frame = new JFrame("Mental Health Robot");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(600, 400);
+        frame.setLayout(null);
+        frame.setResizable(false);
+
+        questionArea = new JTextArea();
+        questionArea.setBounds(20, 20, 550, 100);
+        questionArea.setFont(new Font("Consolas", Font.BOLD, 16));
+        questionArea.setLineWrap(true);
+        questionArea.setWrapStyleWord(true);
+        questionArea.setEditable(false);
+        questionArea.setText(questions[currentQuestion]);
+
+        panel = new JPanel();
+        panel.setBounds(20, 140, 550, 100);
+        panel.setLayout(new GridLayout(2, 2, 10, 10));
+
+        for (int i = 0; i < 4; i++) {
+            responseButtons[i] = new JButton(responses[i]);
+            responseButtons[i].setFont(new Font("Consolas", Font.BOLD, 16));
+            responseButtons[i].addActionListener(this);
+            panel.add(responseButtons[i]);
+        }
+
+        nextButton = new JButton("Next Question");
+        nextButton.setBounds(200, 260, 200, 50);
+        nextButton.setFont(new Font("Consolas", Font.BOLD, 16));
+        nextButton.addActionListener(this);
+        nextButton.setEnabled(false);
+
+        frame.add(questionArea);
+        frame.add(panel);
+        frame.add(nextButton);
+        frame.setVisible(true);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        for (int i = 0; i < 4; i++) {
+            if (e.getSource() == responseButtons[i]) {
+                score += i;
+                nextButton.setEnabled(true);
+                disableResponseButtons();
+            }
+        }
+
+        if (e.getSource() == nextButton) {
+            currentQuestion++;
+            if (currentQuestion < questions.length) {
+                questionArea.setText(questions[currentQuestion]);
+                enableResponseButtons();
+                nextButton.setEnabled(false);
+            } else {
+                assessCondition(score);
+            }
+        }
+    }
+
+    private void disableResponseButtons() {
+        for (JButton button : responseButtons) {
+            button.setEnabled(false);
+        }
+    }
+
+    private void enableResponseButtons() {
+        for (JButton button : responseButtons) {
+            button.setEnabled(true);
+        }
+    }
+
+    // Function to assess mental health based on score
+    private void assessCondition(int score) {
+        String message;
+        if (score <= 5) {
+            message = "Your mental health seems to be in great shape! Keep enjoying those TV shows and cozy moments.";
+        } else if (score <= 10) {
+            message = "You might be experiencing some mild concerns. Maybe take a break and treat yourself to something nice.";
+        } else if (score <= 15) {
+            message = "You could be dealing with moderate issues. Consider chatting with a friend or a professional to help you out.";
+        } else {
+            message = "You might be facing significant challenges. It’s important to seek professional help and find ways to relax.";
+        }
+
+        JOptionPane.showMessageDialog(frame, message, "Assessment Result", JOptionPane.INFORMATION_MESSAGE);
+        System.exit(0);
+    }
+}
