@@ -1,0 +1,322 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.Timer;
+import java.util.TimerTask;
+
+public class HealthAndMentalHealthMonitor {
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new HealthMonitorFrame());
+        SwingUtilities.invokeLater(() -> new MentalHealthRobotFrame());
+    }
+}
+
+class HealthMonitorFrame extends JFrame implements ActionListener {
+
+    private JFrame frame;
+    private JTextField weightField, heightField, temperatureField, systolicField, diastolicField, medicineNameField, intervalField;
+    private JTextArea outputArea;
+    private JButton calculateButton, reminderButton;
+    private Timer reminderTimer;
+
+    public HealthMonitorFrame() {
+        // Initialize Frame
+        frame = new JFrame("Health Monitor");
+        frame.setSize(1500, 1000);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLayout(null);
+
+        // Create Input Fields and Labels
+        createInputFields();
+        createOutputArea();
+        createButtons();
+
+        frame.setVisible(true);
+    }
+
+    private void createInputFields() {
+        Font myFont = new Font("Consolas", Font.BOLD, 16);
+
+        // Initialize Labels and Fields
+        createLabelAndField("Weight (kg):", 20, 20, myFont, weightField);
+        createLabelAndField("Height (m):", 20, 70, myFont, heightField);
+        createLabelAndField("Temperature (°F):", 20, 120, myFont, temperatureField);
+        createLabelAndField("Systolic BP:", 20, 170, myFont, systolicField);
+        createLabelAndField("Diastolic BP:", 20, 220, myFont, diastolicField);
+        createLabelAndField("Medicine Name:", 20, 270, myFont, medicineNameField);
+        createLabelAndField("Reminder Interval (min):", 20, 320, myFont, intervalField);
+    }
+
+    private void createLabelAndField(String labelText, int labelX, int labelY, Font font, JTextField textField) {
+        JLabel label = new JLabel(labelText);
+        label.setBounds(labelX, labelY, 180, 30);
+        label.setFont(font);
+        frame.add(label);
+
+        textField = new JTextField();
+        textField.setBounds(200, labelY, 200, 30);
+        textField.setFont(font);
+        frame.add(textField);
+    }
+
+    private void createOutputArea() {
+        outputArea = new JTextArea();
+        outputArea.setBounds(20, 420, 1010, 400);
+        outputArea.setFont(new Font("Consolas", Font.PLAIN, 14));
+        outputArea.setEditable(false);
+        outputArea.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        frame.add(outputArea);
+    }
+
+    private void createButtons() {
+        calculateButton = new JButton("Calculate");
+        calculateButton.setBounds(20, 370, 150, 30);
+        calculateButton.setFont(new Font("Consolas", Font.BOLD, 16));
+        calculateButton.addActionListener(this);
+        frame.add(calculateButton);
+
+        reminderButton = new JButton("Set Reminder");
+        reminderButton.setBounds(200, 370, 150, 30);
+        reminderButton.setFont(new Font("Consolas", Font.BOLD, 16));
+        reminderButton.addActionListener(this);
+        frame.add(reminderButton);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == calculateButton) {
+            performCalculations();
+        } else if (e.getSource() == reminderButton) {
+            setMedicineReminder();
+        }
+    }
+
+    private void performCalculations() {
+        try {
+            float weight = Float.parseFloat(weightField.getText());
+            float height = Float.parseFloat(heightField.getText());
+            float temperature = Float.parseFloat(temperatureField.getText());
+            int systolic = Integer.parseInt(systolicField.getText());
+            int diastolic = Integer.parseInt(diastolicField.getText());
+
+            float BMI = calculateBMI(weight, height);
+            StringBuilder output = new StringBuilder();
+
+            output.append(String.format("Your BMI is: %.2f%n", BMI));
+            output.append(provideHealthAdvice(BMI)).append("\n");
+            output.append(estimateOrganMasses(weight)).append("\n");
+            output.append(provideTemperatureAdvice(temperature)).append("\n");
+            output.append(provideBloodPressureAdvice(systolic, diastolic)).append("\n");
+
+            outputArea.setText(output.toString());
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(frame, "Please enter valid numerical values.", "Input Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void setMedicineReminder() {
+        String medicineName = medicineNameField.getText();
+        try {
+            int intervalInMinutes = Integer.parseInt(intervalField.getText());
+            if (reminderTimer != null) {
+                reminderTimer.cancel();
+            }
+            reminderTimer = new Timer();
+            TimerTask task = new TimerTask() {
+                @Override
+                public void run() {
+                    JOptionPane.showMessageDialog(frame, "It's time to take your medicine: " + medicineName, "Medicine Reminder", JOptionPane.INFORMATION_MESSAGE);
+                }
+            };
+            reminderTimer.scheduleAtFixedRate(task, intervalInMinutes * 60 * 1000, intervalInMinutes * 60 * 1000);
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(frame, "Please enter a valid number for the reminder interval.", "Input Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // Function to calculate BMI
+    public static float calculateBMI(float weight, float height) {
+        return weight / (height * height);
+    }
+
+    // Function to estimate and print organ masses
+    public static String estimateOrganMasses(float bodyWeight) {
+        float brainMass = calculateOrganMass(bodyWeight, 0.02f);
+        float heartMass = calculateOrganMass(bodyWeight, 0.005f);
+        float liverMass = calculateOrganMass(bodyWeight, 0.025f);
+        float lungsMass = calculateOrganMass(bodyWeight, 0.015f);
+        float kidneysMass = calculateOrganMass(bodyWeight, 0.005f);
+        float muscleMass = calculateOrganMass(bodyWeight, 0.35f);
+        float skinMass = calculateOrganMass(bodyWeight, 0.16f);
+        float bloodMass = calculateOrganMass(bodyWeight, 0.075f);
+        float boneMass = calculateOrganMass(bodyWeight, 0.15f);
+
+        return String.format(
+                "Estimated Organ Masses:\nBrain: %.2f kg\nHeart: %.2f kg\nLiver: %.2f kg\nLungs: %.2f kg\nKidneys: %.2f kg (combined)\nMuscle: %.2f kg\nSkin: %.2f kg\nBlood: %.2f kg\nBone: %.2f kg",
+                brainMass, heartMass, liverMass, lungsMass, kidneysMass, muscleMass, skinMass, bloodMass, boneMass);
+    }
+
+    // Function to provide health advice based on BMI category
+    public static String provideHealthAdvice(float BMI) {
+        if (BMI < 18.5) {
+            return "BMI Category: Underweight\nDiet Advice: Increase intake of calorie-dense foods such as nuts, seeds, avocados, and whole grains.\nMedical Advice: Consider nutritional supplements and check for underlying health conditions.";
+        } else if (BMI >= 18.5 && BMI <= 24.9) {
+            return "BMI Category: Normal weight\nDiet Advice: Maintain a balanced diet with a variety of fruits, vegetables, lean proteins, and whole grains.\nMedical Advice: Continue regular physical activity and routine check-ups.";
+        } else if (BMI >= 25 && BMI <= 29.9) {
+            return "BMI Category: Overweight\nDiet Advice: Focus on portion control, reduce intake of sugary and fatty foods, and increase physical activity.\nMedical Advice: Monitor for signs of metabolic syndrome and consider consulting a nutritionist.";
+        } else {
+            return "BMI Category: Obesity\nDiet Advice: Adopt a low-calorie, nutrient-dense diet and increase physical activity. Consider behavioral therapy and support groups.\nMedical Advice: Monitor for obesity-related conditions like type 2 diabetes, hypertension, and cardiovascular diseases.";
+        }
+    }
+
+    // Function to provide health advice based on temperature
+    public static String provideTemperatureAdvice(float temperature) {
+        if (temperature < 90.0f) {
+            return "Temperature Category: Severe Hypothermia\nMedical Advice: Seek immediate medical attention. Warm the person gradually using blankets and warm fluids. Avoid direct heat sources as they can cause burns.";
+        } else if (temperature >= 90.0f && temperature < 95.0f) {
+            return "Temperature Category: Hypothermia\nMedical Advice: Seek immediate medical attention. Warm the person gradually using blankets and warm fluids.";
+        } else if (temperature >= 95.0f && temperature < 97.0f) {
+            return "Temperature Category: Low Temperature\nMedical Advice: Monitor for symptoms of hypothermia. Keep the person warm and ensure they are in a comfortable environment.";
+        } else if (temperature >= 97.0f && temperature <= 99.5f) {
+            return "Temperature Category: Normal\nMedical Advice: No immediate action needed.";
+        } else if (temperature > 99.5f && temperature <= 100.9f) {
+            return "Temperature Category: Slight Fever\nMedical Advice: Stay hydrated, rest, and monitor symptoms. If fever persists, consult a healthcare provider.";
+        } else if (temperature > 100.9f && temperature <= 104.0f) {
+            return "Temperature Category: High Fever\nMedical Advice: Seek medical attention. High fever can be a sign of infection or other serious conditions.";
+        } else {
+            return "Temperature Category: Heatstroke\nMedical Advice: Seek immediate medical attention. Move the person to a cooler place, hydrate them, and apply cool, wet cloths to the skin. Heatstroke can be life-threatening and requires prompt treatment.";
+        }
+    }
+
+    // Function to provide health advice based on blood pressure
+    public static String provideBloodPressureAdvice(int systolicBP, int diastolicBP) {
+        if (systolicBP < 90 || diastolicBP < 60) {
+            return "Blood Pressure Category: Hypotension\nMedical Advice: Increase fluid intake, eat small, frequent meals, and avoid prolonged standing.";
+        } else if ((systolicBP >= 90 && systolicBP <= 120) && (diastolicBP >= 60 && diastolicBP <= 80)) {
+            return "Blood Pressure Category: Normal\nMedical Advice: Maintain a healthy lifestyle and routine check-ups.";
+        } else if ((systolicBP > 120 && systolicBP <= 139) || (diastolicBP > 80 && diastolicBP <= 89)) {
+            return "Blood Pressure Category: Prehypertension\nMedical Advice: Monitor blood pressure regularly, reduce salt intake, and maintain a healthy weight.";
+        } else {
+            return "Blood Pressure Category: Hypertension\nMedical Advice: Seek medical advice for potential medication. Adopt a low-sodium diet, exercise regularly, and avoid smoking.";
+        }
+    }
+
+    private static float calculateOrganMasses(float bodyWeight, float proportion) {
+        return bodyWeight * proportion;
+    }
+}
+
+class MentalHealthRobotFrame extends JFrame implements ActionListener {
+
+    private JFrame frame;
+    private JTextArea questionArea;
+    private JButton[] responseButtons = new JButton[4];
+    private JButton nextButton;
+    private JPanel panel;
+    private int currentQuestion = 0;
+    private int score = 0;
+
+    // Array of light-hearted questions
+    private String[] questions = {
+        "Do you often feel like your favorite TV show is more reliable than people?",
+        "Do you find yourself awake at night because you’re debating the perfect pizza topping?",
+        "Do you feel like your houseplants are secretly judging your life choices?",
+        "Do you struggle to concentrate because you’re daydreaming about a vacation?",
+        "Have you lost interest in hobbies because your couch is just too comfortable?",
+        "Do you feel like you need more coffee just to make it through the day?",
+        "Do you sometimes feel like you’re stuck in a never-ending loop of Monday mornings?"
+    };
+
+    // Response options
+    private String[] responses = {"Never", "Sometimes", "Often", "Always"};
+
+    MentalHealthRobotFrame() {
+        frame = new JFrame("Mental Health Robot");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(600, 400);
+        frame.setLayout(null);
+        frame.setResizable(false);
+
+        questionArea = new JTextArea();
+        questionArea.setBounds(20, 20, 550, 100);
+        questionArea.setFont(new Font("Consolas", Font.BOLD, 16));
+        questionArea.setLineWrap(true);
+        questionArea.setWrapStyleWord(true);
+        questionArea.setEditable(false);
+        questionArea.setText(questions[currentQuestion]);
+
+        panel = new JPanel();
+        panel.setBounds(20, 140, 550, 100);
+        panel.setLayout(new GridLayout(2, 2, 10, 10));
+
+        for (int i = 0; i < 4; i++) {
+            responseButtons[i] = new JButton(responses[i]);
+            responseButtons[i].setFont(new Font("Consolas", Font.BOLD, 16));
+            responseButtons[i].addActionListener(this);
+            panel.add(responseButtons[i]);
+        }
+
+        nextButton = new JButton("Next Question");
+        nextButton.setBounds(200, 260, 200, 50);
+        nextButton.setFont(new Font("Consolas", Font.BOLD, 16));
+        nextButton.addActionListener(this);
+        nextButton.setEnabled(false);
+
+        frame.add(questionArea);
+        frame.add(panel);
+        frame.add(nextButton);
+        frame.setVisible(true);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        for (int i = 0; i < 4; i++) {
+            if (e.getSource() == responseButtons[i]) {
+                score += i;
+                nextButton.setEnabled(true);
+                disableResponseButtons();
+            }
+        }
+
+        if (e.getSource() == nextButton) {
+            currentQuestion++;
+            if (currentQuestion < questions.length) {
+                questionArea.setText(questions[currentQuestion]);
+                enableResponseButtons();
+                nextButton.setEnabled(false);
+            } else {
+                assessCondition(score);
+            }
+        }
+    }
+
+    private void disableResponseButtons() {
+        for (JButton button : responseButtons) {
+            button.setEnabled(false);
+        }
+    }
+
+    private void enableResponseButtons() {
+        for (JButton button : responseButtons) {
+            button.setEnabled(true);
+        }
+    }
+
+    // Function to assess mental health based on score
+    private void assessCondition(int score) {
+        String message;
+        if (score <= 5) {
+            message = "Your mental health seems to be in great shape! Keep enjoying those TV shows and cozy moments.";
+        } else if (score <= 10) {
+            message = "You might be experiencing some mild concerns. Maybe take a break and treat yourself to something nice.";
+        } else if (score <= 15) {
+            message = "You could be dealing with moderate issues. Consider chatting with a friend or a professional to help you out.";
+        } else {
+            message = "You might be facing significant challenges. It’s important to seek professional help and find ways to relax.";
+        }
+
+        JOptionPane.showMessageDialog(frame, message, "Assessment Result", JOptionPane.INFORMATION_MESSAGE);
+        System.exit(0);
+    }
+}
